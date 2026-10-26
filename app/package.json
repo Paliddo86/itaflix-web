@@ -1,0 +1,27 @@
+{
+  "name": "itaflix-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "ITAFlix web app - porting web dell'app tvOS (React + Vite + Vercel Functions)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "node server/dev-server.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "vercel:dev": "vercel dev"
+  },
+  "dependencies": {
+    "hls.js": "^1.5.17",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}
