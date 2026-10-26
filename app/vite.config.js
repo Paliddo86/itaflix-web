@@ -11,6 +11,14 @@ export default defineConfig({
       '/api': 'http://localhost:3001',
     },
   },
+  // `npm run preview` serve la build di produzione: anche lì proxiamo le API
+  // verso il dev-server locale, così si può testare il bundle reale.
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': 'http://localhost:3001',
+    },
+  },
   build: {
     outDir: 'dist',
     sourcemap: false,
