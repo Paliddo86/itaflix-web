@@ -97,10 +97,10 @@ export default function Player({ url, title, subtitle, resumeKey, onClose, onNex
     video.addEventListener('pause', handlePause);
     video.addEventListener('ended', handleEnded);
 
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari / iOS: HLS nativo
-      video.src = url;
-    } else if (Hls.isSupported()) {
+    // Ordine importante: Chrome riporta "maybe" anche per
+    // `application/vnd.apple.mpegurl` pur non supportando HLS nativamente,
+    // quindi hls.js (MSE) va preferito; il percorso nativo resta per Safari/iOS.
+    if (Hls.isSupported()) {
       hls = new Hls({ maxBufferLength: 40, backBufferLength: 30, enableWorker: true });
       hlsRef.current = hls;
 
@@ -142,6 +142,9 @@ export default function Player({ url, title, subtitle, resumeKey, onClose, onNex
 
       hls.loadSource(url);
       hls.attachMedia(video);
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari / iOS: HLS nativo
+      video.src = url;
     } else {
       setStatus('error');
       setErrorMessage('HLS non supportato da questo browser');
