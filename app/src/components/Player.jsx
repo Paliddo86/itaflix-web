@@ -4,7 +4,6 @@ import Hls from 'hls.js';
 import { t } from '../lib/i18n.js';
 import { getPreferredHeight } from '../lib/settings.js';
 import { clearResume, getResume, setResume } from '../lib/storage.js';
-import { formatTime } from '../lib/utils.js';
 
 /**
  * Player HLS — sostituisce `Player`/`Playlist` di TVMLKit.
@@ -12,6 +11,10 @@ import { formatTime } from '../lib/utils.js';
  * - scelta del livello in base alla qualità preferita (impostazioni)
  * - ripresa della posizione e salvataggio ogni ~5s
  * - scorciatoie tastiera: spazio, ←/→, M, F, Esc
+ *
+ * I controlli nativi del `<video>` mostrano già tempo, durata, barra e
+ * impostazioni: qui restano solo le azioni che il player nativo non offre
+ * (qualità HLS, prossimo episodio, chiusura).
  */
 export default function Player({ url, title, subtitle, resumeKey, onClose, onNext, onEnded }) {
   const videoRef = useRef(null);
@@ -24,8 +27,6 @@ export default function Player({ url, title, subtitle, resumeKey, onClose, onNex
   const [errorMessage, setErrorMessage] = useState('');
   const [levels, setLevels] = useState([]);
   const [level, setLevel] = useState(-1);
-  const [progress, setProgress] = useState({ current: 0, duration: 0 });
-  const [resumeAt, setResumeAt] = useState(0);
 
   useEffect(() => {
     onNextRef.current = onNext;
@@ -56,7 +57,6 @@ export default function Player({ url, title, subtitle, resumeKey, onClose, onNex
     setErrorMessage('');
     setLevels([]);
     setLevel(-1);
-    setResumeAt(getResume(resumeKey));
 
     let hls = null;
 
@@ -75,10 +75,8 @@ export default function Player({ url, title, subtitle, resumeKey, onClose, onNex
     };
 
     const handleTimeUpdate = () => {
-      setProgress({
-        current: video.currentTime || 0,
-        duration: Number.isFinite(video.duration) ? video.duration : 0,
-      });
+      // Il tempo/durata sono mostrati dai controlli nativi del <video>:
+      // qui serve solo a salvare la posizione di ripresa.
       saveProgress();
     };
 
@@ -257,17 +255,6 @@ export default function Player({ url, title, subtitle, resumeKey, onClose, onNex
               <h3>{t('player-error')}</h3>
               <p>{errorMessage}</p>
             </div>
-          )}
-        </div>
-
-        <div className="player-footer">
-          <span>
-            {formatTime(progress.current)} / {formatTime(progress.duration)}
-          </span>
-          {resumeAt > 0 && (
-            <span className="player-resume">
-              {t('movie-resume', { time: formatTime(resumeAt) })}
-            </span>
           )}
         </div>
       </div>
