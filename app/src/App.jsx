@@ -5,6 +5,7 @@ import NavBar from './components/NavBar.jsx';
 import Catalog from './pages/Catalog.jsx';
 import Home from './pages/Home.jsx';
 import Movie from './pages/Movie.jsx';
+import My from './pages/My.jsx';
 import Search from './pages/Search.jsx';
 import Season from './pages/Season.jsx';
 import Settings from './pages/Settings.jsx';
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/movie/:id" element={<Movie />} />
           <Route path="/tv/:id" element={<TvShow />} />
           <Route path="/tv/:id/season/:season" element={<Season />} />
+          <Route path="/my" element={<My />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Home />} />
         </Routes>
