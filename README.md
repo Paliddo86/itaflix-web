@@ -1,12 +1,12 @@
 
 # 🎬 VixFlix / ITAFlix
 
-Due client dello stesso servizio:
+La web app vive interamente in `app/`:
 
 | Percorso | Cosa è | Come si usa |
 |---|---|---|
-| `index.html` | pagina statica storica (GitHub Pages): usa TMDb e incorpora il player di VixSrc in un iframe | apri `index.html` / GitHub Pages |
 | `app/` | **web app React** (port dell'app tvOS `itaflix-tvos`): home con shelf, ricerca, catalogo con filtri, dettaglio film/serie, episodi, preferiti (anche TMDB) e player HLS nativo; logo e stile dei menu ripresi dall'app tvOS | vedi [`app/README.md`](app/README.md) |
+| branch `Old` | la vecchia pagina statica ITAFlix (HTML + iframe VixSrc) servita su GitHub Pages: su questo branch è stata rimossa | `git switch Old` |
 
 La web app in `app/` richiede un piccolo backend (funzioni serverless) per
 l'estrazione dello stream: VixSrc risponde `403` alle richieste browser con
@@ -37,7 +37,7 @@ in [`app/README.md`](app/README.md)).
 - **Vercel Functions** (Node 20) per l'estrazione lato server
 - [TMDb API](https://www.themoviedb.org/documentation/api) per informazioni su film/serie
 - [VixSrc.to](https://vixsrc.to) per lo streaming
-- La pagina storica `index.html` resta in HTML5/CSS3/JavaScript puri
+- La vecchia pagina statica (`index.html`) resta disponibile sul branch `Old`
 
 ---
 
