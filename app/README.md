@@ -79,8 +79,19 @@ entrambi i comandi sopra).
 | `VITE_TMDB_API` | build (client) | chiave TMDB usata dal browser |
 | `TMDB_API` | runtime (server) | chiave TMDB per eventuali funzioni server |
 | `VIX_BASE_URL` | runtime (server) | base URL del servizio streaming (default `https://vixsrc.to`) |
+| `VIX_PLAYLIST_PROXY` | runtime (server) | `1` fa passare manifest e chiave AES da `/api/playlist` (solo se il browser non raggiunge `vixsrc.to`) |
 
 `.env.local` è in `.gitignore`: non committarlo.
+
+### Proxy playlist opzionale
+
+Normalmente il browser carica `playlist`, `enc.key` e segmenti direttamente da
+vixsrc/CDN (sono tutti con `Access-Control-Allow-Origin: *`). Se `vixsrc.to` è
+bloccato a livello DNS per il tuo provider, imposta `VIX_PLAYLIST_PROXY=1`:
+`/api/stream` restituirà anche `proxyUrl` e il player userà
+`/api/playlist?u=…`, che riscrive i riferimenti a `vixsrc.to` (manifest,
+rendition audio/sottotitoli, chiave AES) mantenendo **i segmenti video diretti
+sulla CDN**.
 
 ---
 
@@ -102,15 +113,18 @@ funzioni. Le funzioni sono in `app/api/`, i moduli condivisi in `app/server/`.
 
 ```
 app/
+├── public/                logo.png · logo-big.png · hand.png (asset dell'app tvOS)
 ├── api/stream.js          GET /api/stream?type=movie|tv&id=&season=&episode=
+├── api/playlist.js        proxy opzionale di manifest/chiave (VIX_PLAYLIST_PROXY=1)
 ├── api/health.js          diagnostica
 ├── server/vixsrc.js       port 1:1 di itaflix-tvos/src/extractors/vixsrc.js
+├── server/playlistProxy.js riscrittura delle playlist per il proxy
 ├── server/http.js         fetch con timeout, senza Referer
 ├── server/dev-server.mjs  emulazione Vercel per lo sviluppo locale
 └── src/
-    ├── lib/               models, tmdb, i18n, settings, storage, api, utils
-    ├── components/        NavBar, Row, Tile, Hero, Player (hls.js), …
-    └── pages/             Home, Search, Catalog, Movie, TvShow, Season, Settings
+    ├── lib/               models, tmdb, i18n, settings, storage, user, api, utils
+    ├── components/        NavBar, Row, Tile, Hero, Player (hls.js), TmdbLogin, …
+    └── pages/             Home, Search, Catalog, Movie, TvShow, Season, My, Settings
 ```
 
 ### Mappa di porting (tvOS → web)
@@ -122,13 +136,21 @@ app/
 | `extractors/vixsrc.js` | `server/vixsrc.js` (senza `eval`) |
 | `localization/it.js` | `src/lib/i18n.js` |
 | `settings.js` | `src/lib/settings.js` (stessa chiave `itaflix-settings`) |
+| `user.js` | `src/lib/user.js` (sessione TMDB in `localStorage`) |
 | `routes/home.js` | `src/pages/Home.jsx` |
 | `routes/search.js` | `src/pages/Search.jsx` |
+| `routes/moviesGenres.js` · `tvShowsGenres.js` | `src/pages/Catalog.jsx` (filtri piattaforma/genere) |
 | `routes/movie.js` | `src/pages/Movie.jsx` + `components/Player.jsx` |
 | `routes/tvshow.js` + `season.js` | `src/pages/TvShow.jsx` + `Season.jsx` |
-| `routes/settings.js` | `src/pages/Settings.jsx` |
+| `routes/my.js` | `src/pages/My.jsx` (preferiti locali + TMDB) |
+| `routes/tmdb-login.js` | `src/components/TmdbLogin.jsx` |
 | `components/tile.js` | `src/components/Tile.jsx` |
-| `common/styles.js` | `src/theme.css` (nero + `#b90505`) |
+| `common/styles.js` + `assets/img/logo*.png` | `src/theme.css` + `public/logo*.png` |
+
+> **Grafica**: il logo è quello originale dell'app tvOS (`public/logo.png` nella
+> navbar, `logo-big.png` come splash del loader) e i bottoni/menu replicano lo
+> stile `menuItem` di TVML: voce neutra che si accende di rosso
+> `rgba(185, 5, 5, 1)` quando è a fuoco/attiva, con angoli arrotondati.
 
 ---
 
@@ -140,8 +162,12 @@ app/
 
 - Home con 8 shelf TMDB (film, serie, anime, Netflix, Prime, Disney+, Now, Apple, HBO)
 - Ricerca con debounce su film e serie
+- Cataloghi Film/Serie con filtri per **piattaforma** e **genere** + "carica altri"
 - Dettaglio film con collezione e raccomandati
 - Dettaglio serie con stagioni, elenco episodi e "prossimo episodio"
 - Player HLS con scelta qualità (in base alle impostazioni), ripresa della
   posizione e salvataggio ogni 5 secondi
-- Preferiti locali e impostazioni persistite in `localStorage`
+- **Preferiti**: locali in `localStorage` e, dopo il login TMDB, sincronizzati
+  sull'account (con stato letto da `account_states`)
+- Impostazioni persistite in `localStorage`
+- Logo e stile dei menu/bottoni presi dall'app tvOS
