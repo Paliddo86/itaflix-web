@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import ErrorBox from '../components/ErrorBox.jsx';
-import Hero from '../components/Hero.jsx';
 import Row from '../components/Row.jsx';
 import Spinner from '../components/Spinner.jsx';
 import Tile from '../components/Tile.jsx';
@@ -10,6 +9,7 @@ import TMDB from '../lib/tmdb.js';
 /**
  * Home — equivalente di itaflix-tvos/src/routes/home.js
  * (stackTemplate + collectionList di shelf).
+ * Nessun hero: si parte direttamente dalle liste.
  */
 export default function Home() {
   const [categories, setCategories] = useState([]);
@@ -38,13 +38,8 @@ export default function Home() {
   if (status === 'error') return <ErrorBox message={error} onRetry={load} />;
   if (!categories.length) return <ErrorBox message="Nessun contenuto disponibile" onRetry={load} />;
 
-  const firstCategory = categories[0];
-  const heroItem = firstCategory.values[Math.min(3, firstCategory.values.length - 1)];
-
   return (
     <div className="page page-home">
-      <Hero item={heroItem} />
-
       <div className="rows">
         {categories.map((category, index) => (
           <Row key={`${category.name}-${index}`} title={category.name}>
@@ -57,3 +52,4 @@ export default function Home() {
     </div>
   );
 }
+

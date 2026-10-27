@@ -123,7 +123,7 @@ app/
 ├── server/dev-server.mjs  emulazione Vercel per lo sviluppo locale
 └── src/
     ├── lib/               models, tmdb, i18n, settings, storage, user, api, utils
-    ├── components/        NavBar, Row, Tile, Hero, Player (hls.js), TmdbLogin, …
+    ├── components/        NavBar, Row, Tile, Player (hls.js), TmdbLogin, …
     └── pages/             Home, Search, Catalog, Movie, TvShow, Season, My, Settings
 ```
 
@@ -160,7 +160,10 @@ app/
 
 ## Funzionalità
 
-- Home con 8 shelf TMDB (film, serie, anime, Netflix, Prime, Disney+, Now, Apple, HBO)
+- Home con 8 shelf TMDB (film, serie, anime, Netflix, Prime, Disney+, Now, Apple, HBO),
+  senza hero: le liste partono subito e il primo poster è allineato al titolo
+- Layout **responsive** (desktop, tablet e smartphone): navbar su due righe e
+  tile ridimensionate sotto 820px, filtri scorrevoli, player a schermo intero
 - Ricerca con debounce su film e serie
 - Cataloghi Film/Serie con filtri per **piattaforma** e **genere** + "carica altri"
 - Dettaglio film con collezione e raccomandati
