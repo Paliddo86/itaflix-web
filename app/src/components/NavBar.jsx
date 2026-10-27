@@ -8,11 +8,14 @@ const links = [
   { to: '/search', label: t('menu-search') },
   { to: '/movies', label: t('menu-movies') },
   { to: '/tv', label: t('menu-tvshows') },
+  { to: '/my', label: t('menu-my') },
   { to: '/settings', label: t('menu-settings') },
 ];
 
 /**
  * Barra di navigazione — equivalente della `menuBarTemplate` dell'app tvOS.
+ * Logo originale dell'app (`public/logo.png`) e voci con lo stesso highlight
+ * rosso (`rgba(185,5,5,1)`) che TVML applica alla voce a fuoco.
  */
 export default function NavBar() {
   const [scrolled, setScrolled] = useState(false);
@@ -26,8 +29,8 @@ export default function NavBar() {
 
   return (
     <header className={`navbar${scrolled ? ' navbar-scrolled' : ''}`}>
-      <NavLink to="/" className="navbar-logo">
-        <span className="navbar-logo-mark">ITA</span>Flix
+      <NavLink to="/" className="navbar-logo" aria-label={t('app-name')}>
+        <img src="/logo.png" alt={t('app-name')} />
       </NavLink>
 
       <nav className="navbar-links">

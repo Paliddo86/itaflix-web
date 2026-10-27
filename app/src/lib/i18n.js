@@ -11,6 +11,7 @@ const translations = {
     'menu-search': 'Cerca',
     'menu-movies': 'Film',
     'menu-tvshows': 'Serie TV',
+    'menu-my': 'Preferiti',
     'menu-settings': 'Impostazioni',
 
     'movie-type': 'Film',
@@ -73,6 +74,29 @@ const translations = {
     'settings-quality-hd': 'HD (720p)',
     'settings-quality-fullhd': 'Full HD (1080p)',
     'settings-quality-uhd': '4K (2160p)',
+
+    'filters-all': 'Tutti',
+    'filters-provider': 'Piattaforma',
+    'filters-genre': 'Genere',
+
+    'my-title': 'Preferiti',
+    'my-local': 'Su questo dispositivo',
+    'my-tmdb': 'Preferiti TMDB',
+    'my-movies': 'Film preferiti',
+    'my-tvshows': 'Serie TV preferite',
+    'my-empty': 'Non hai ancora aggiunto preferiti: apri un film o una serie e premi ♡.',
+    'my-empty-local': 'Nessun preferito salvato su questo dispositivo.',
+    'my-login-title': 'Accedi con TMDB',
+    'my-login-description':
+      'Facoltativo: accedendo con il tuo account TMDB i preferiti restano sincronizzati tra i dispositivi. Le credenziali vengono inviate solo a TMDB.',
+    'my-login-username': 'Username TMDB',
+    'my-login-password': 'Password',
+    'my-login-submit': 'Accedi',
+    'my-login-busy': 'Accesso in corso...',
+    'my-login-error': 'Accesso non riuscito: controlla le credenziali.',
+    'my-logout': 'Esci',
+    'my-connected': 'Connesso come {username}',
+    'my-open-login': 'Accedi con TMDB',
   },
 };
 
