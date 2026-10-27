@@ -18,6 +18,15 @@ function json(res, status, payload) {
   res.status(status).json(payload);
 }
 
+/**
+ * Se abilitato (`VIX_PLAYLIST_PROXY=1`), aggiunge l'URL del proxy playlist
+ * da preferire quando il browser non riesce a raggiungere vixsrc.to.
+ */
+function withProxy(data) {
+  if (process.env.VIX_PLAYLIST_PROXY !== '1') return data;
+  return { ...data, proxyUrl: `/api/playlist?u=${encodeURIComponent(data.url)}` };
+}
+
 export default async function handler(req, res) {
   // Utile solo se l'endpoint viene richiamato da un'altra origine.
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -40,7 +49,7 @@ export default async function handler(req, res) {
   const cacheKey = `${type}:${id}:${season || ''}:${episode || ''}`;
   const cached = cache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
-    return json(res, 200, { ...cached.data, cached: true });
+    return json(res, 200, { ...withProxy(cached.data), cached: true });
   }
 
   try {
@@ -57,7 +66,7 @@ export default async function handler(req, res) {
     }
 
     res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
-    return json(res, 200, { ...data, cached: false });
+    return json(res, 200, { ...withProxy(data), cached: false });
   } catch (error) {
     console.error('[api/stream]', cacheKey, error.message);
     return json(res, 502, { error: error.message });

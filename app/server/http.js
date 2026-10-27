@@ -67,3 +67,32 @@ export async function fetchJson(url, options) {
     throw new Error(`Risposta JSON non valida da ${url}`);
   }
 }
+
+/**
+ * GET binario con timeout (usato per la chiave AES del proxy playlist).
+ * @param {string} url
+ * @param {{ headers?: Record<string, string>, timeout?: number }} [options]
+ * @returns {Promise<{ status: number, buffer: ArrayBuffer }>}
+ */
+export async function fetchBuffer(url, { headers = {}, timeout = DEFAULT_TIMEOUT } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      headers: buildHeaders(headers),
+      signal: controller.signal,
+      redirect: 'follow',
+    });
+
+    const buffer = await response.arrayBuffer();
+    return { status: response.status, buffer };
+  } catch (error) {
+    if (error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+      throw new Error(`Timeout (${timeout}ms) su ${url}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}

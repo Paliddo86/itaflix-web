@@ -37,6 +37,7 @@ const port = Number(process.argv[2] || process.env.PORT || 3001);
 const routes = {
   '/api/stream': (await import('../api/stream.js')).default,
   '/api/health': (await import('../api/health.js')).default,
+  '/api/playlist': (await import('../api/playlist.js')).default,
 };
 
 function decorateResponse(res) {
@@ -49,6 +50,17 @@ function decorateResponse(res) {
       res.setHeader('content-type', 'application/json; charset=utf-8');
     }
     res.end(JSON.stringify(payload));
+    return res;
+  };
+  // come `res.send` di Vercel: supporta stringhe e buffer (chiave AES)
+  res.send = (body) => {
+    if (body instanceof ArrayBuffer) {
+      res.end(Buffer.from(body));
+    } else if (Buffer.isBuffer(body)) {
+      res.end(body);
+    } else {
+      res.end(String(body));
+    }
     return res;
   };
   return res;
