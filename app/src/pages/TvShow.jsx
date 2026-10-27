@@ -8,6 +8,7 @@ import Tile from '../components/Tile.jsx';
 import { t } from '../lib/i18n.js';
 import { isFavorite, toggleFavorite } from '../lib/storage.js';
 import TMDB from '../lib/tmdb.js';
+import { getSession } from '../lib/user.js';
 
 /**
  * Dettaglio serie TV — equivalente di itaflix-tvos/src/routes/tvshow.js
@@ -21,6 +22,7 @@ export default function TvShow() {
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
   const [favorite, setFavorite] = useState(false);
+  const [syncError, setSyncError] = useState('');
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -28,8 +30,32 @@ export default function TvShow() {
 
     try {
       const details = await TMDB.getTvShowDetails(id);
+      const key = `tv:${details.tmdb_id}`;
+      const localFavorite = isFavorite(key);
+      let favoriteNow = localFavorite;
+
+      const session = getSession();
+      if (session?.sessionId) {
+        try {
+          const states = await TMDB.getAccountStates(details.tmdb_id, 'tv', session.sessionId);
+          favoriteNow = Boolean(states?.favorite) || localFavorite;
+
+          if (favoriteNow && !localFavorite) {
+            toggleFavorite({
+              key,
+              type: 'tv',
+              id: details.tmdb_id,
+              title: details.title,
+              poster: details.poster,
+            });
+          }
+        } catch (err) {
+          console.warn('[tmdb] account states:', err.message);
+        }
+      }
+
       setTvshow(details);
-      setFavorite(isFavorite(`tv:${details.tmdb_id}`));
+      setFavorite(favoriteNow);
       setStatus('ready');
     } catch (err) {
       setError(err.message);
@@ -41,16 +67,34 @@ export default function TvShow() {
     load();
   }, [load]);
 
-  const handleFavorite = () => {
+  const handleFavorite = async () => {
     if (!tvshow) return;
+
+    const key = `tv:${tvshow.tmdb_id}`;
     const nowFavorite = toggleFavorite({
-      key: `tv:${tvshow.tmdb_id}`,
+      key,
       type: 'tv',
       id: tvshow.tmdb_id,
       title: tvshow.title,
       poster: tvshow.poster,
     });
     setFavorite(nowFavorite);
+    setSyncError('');
+
+    const session = getSession();
+    if (!session?.sessionId) return;
+
+    try {
+      await TMDB.toggleFavorite(
+        session.sessionId,
+        session.accountId,
+        'tv',
+        tvshow.tmdb_id,
+        nowFavorite,
+      );
+    } catch (err) {
+      setSyncError(`TMDB: ${err.message}`);
+    }
   };
 
   if (status === 'loading') return <Spinner />;
@@ -118,6 +162,8 @@ export default function TvShow() {
                 {favorite ? '❤' : '♡'} Preferiti
               </button>
             </div>
+
+            {syncError && <p className="inline-error">{syncError}</p>}
           </div>
         </div>
       </section>

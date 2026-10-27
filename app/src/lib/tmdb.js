@@ -462,7 +462,8 @@ class TMDB {
     if (genreService) {
       requestParams.with_watch_providers = genreService;
       requestParams.watch_region = watchRegion;
-    } else if (genreId) {
+    }
+    if (genreId) {
       requestParams.with_genres = genreId;
     }
 
@@ -493,7 +494,8 @@ class TMDB {
     if (genreService) {
       requestParams.with_watch_providers = genreService;
       requestParams.watch_region = watchRegion;
-    } else if (genreId) {
+    }
+    if (genreId) {
       requestParams.with_genres = genreId;
     }
 
@@ -510,6 +512,117 @@ class TMDB {
     return {
       movie: this.getAllGenres('movie'),
       tv: this.getAllGenres('tv'),
+    };
+  }
+
+  /* --------------------------------------------------------------------- */
+  /* Autenticazione e preferiti (port di routes/tmdb-login.js e my.js)      */
+  /* --------------------------------------------------------------------- */
+
+  static async _tmdbPost(path, data = {}, params = {}) {
+    if (!API_KEY) {
+      throw new Error('TMDB API key mancante: imposta VITE_TMDB_API in .env.local');
+    }
+
+    const query = Object.keys(params)
+      .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== '')
+      .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+      .join('&');
+
+    const url = `${API_BASE}${path}?api_key=${API_KEY}${query ? `&${query}` : ''}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json;charset=utf-8' },
+      body: JSON.stringify(data),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.status_message || `TMDB HTTP ${response.status} su ${path}`);
+    }
+
+    return payload;
+  }
+
+  static async createRequestToken() {
+    const data = await this._tmdbPost('/authentication/token/new');
+    if (!data.success || !data.request_token) {
+      throw new Error('Impossibile creare il request token TMDB');
+    }
+    return data.request_token;
+  }
+
+  static async createSessionWithCredentials(username, password, requestToken) {
+    await this._tmdbPost('/authentication/token/validate_with_login', {
+      username,
+      password,
+      request_token: requestToken,
+    });
+
+    const session = await this._tmdbPost('/authentication/session/new', {
+      request_token: requestToken,
+    });
+
+    if (!session.session_id) throw new Error('Sessione TMDB non creata');
+    return session;
+  }
+
+  static async getAccountDetails(sessionId) {
+    return this._tmdbGet('/account', { session_id: sessionId });
+  }
+
+  static async deleteSession(sessionId) {
+    try {
+      return await this._tmdbPost('/authentication/session', { session_id: sessionId });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  static async getAccountStates(id, type, sessionId) {
+    if (!sessionId) return { favorite: false };
+    return this._tmdbGet(`/${type}/${id}/account_states`, { session_id: sessionId });
+  }
+
+  static async toggleFavorite(sessionId, accountId, mediaType, mediaId, status) {
+    const data = await this._tmdbPost(
+      `/account/${accountId}/favorite`,
+      {
+        media_type: mediaType,
+        media_id: Number(mediaId),
+        favorite: Boolean(status),
+      },
+      { session_id: sessionId },
+    );
+
+    return Boolean(data.success);
+  }
+
+  static async getFavoriteMovies(sessionId, accountId, page = 1) {
+    const res = await this._tmdbGet(`/account/${accountId}/favorite/movies`, {
+      session_id: sessionId,
+      page,
+      sort_by: 'created_at.desc',
+    });
+
+    return {
+      movies: (res.results || []).map((it) => this._mapMovieToItem(it)),
+      total: res.total_results || 0,
+    };
+  }
+
+  static async getFavoriteTv(sessionId, accountId, page = 1) {
+    const res = await this._tmdbGet(`/account/${accountId}/favorite/tv`, {
+      session_id: sessionId,
+      page,
+      sort_by: 'created_at.desc',
+    });
+
+    return {
+      tvshows: (res.results || []).map((it) => this._mapTvToItem(it)),
+      total: res.total_results || 0,
     };
   }
 }

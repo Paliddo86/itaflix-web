@@ -12,6 +12,7 @@ import { getStream } from '../lib/api.js';
 import { t } from '../lib/i18n.js';
 import { contentKey, getResume, isFavorite, toggleFavorite } from '../lib/storage.js';
 import TMDB from '../lib/tmdb.js';
+import { getSession } from '../lib/user.js';
 import { formatRuntime, formatTime } from '../lib/utils.js';
 
 /**
@@ -29,6 +30,7 @@ export default function Movie() {
   const [playBusy, setPlayBusy] = useState(false);
   const [playError, setPlayError] = useState('');
   const [favorite, setFavorite] = useState(false);
+  const [syncError, setSyncError] = useState('');
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -36,8 +38,32 @@ export default function Movie() {
 
     try {
       const details = await TMDB.getMovieDetails(id);
+      const key = `movie:${details.tmdb_id}`;
+      const localFavorite = isFavorite(key);
+      let favoriteNow = localFavorite;
+
+      const session = getSession();
+      if (session?.sessionId) {
+        try {
+          const states = await TMDB.getAccountStates(details.tmdb_id, 'movie', session.sessionId);
+          favoriteNow = Boolean(states?.favorite) || localFavorite;
+
+          if (favoriteNow && !localFavorite) {
+            toggleFavorite({
+              key,
+              type: 'movie',
+              id: details.tmdb_id,
+              title: details.title,
+              poster: details.poster,
+            });
+          }
+        } catch (err) {
+          console.warn('[tmdb] account states:', err.message);
+        }
+      }
+
       setMovie(details);
-      setFavorite(isFavorite(`movie:${details.tmdb_id}`));
+      setFavorite(favoriteNow);
       setStatus('ready');
     } catch (err) {
       setError(err.message);
@@ -68,16 +94,34 @@ export default function Movie() {
     }
   };
 
-  const handleFavorite = () => {
+  const handleFavorite = async () => {
     if (!movie) return;
+
+    const key = `movie:${movie.tmdb_id}`;
     const nowFavorite = toggleFavorite({
-      key: `movie:${movie.tmdb_id}`,
+      key,
       type: 'movie',
       id: movie.tmdb_id,
       title: movie.title,
       poster: movie.poster,
     });
     setFavorite(nowFavorite);
+    setSyncError('');
+
+    const session = getSession();
+    if (!session?.sessionId) return;
+
+    try {
+      await TMDB.toggleFavorite(
+        session.sessionId,
+        session.accountId,
+        'movie',
+        movie.tmdb_id,
+        nowFavorite,
+      );
+    } catch (err) {
+      setSyncError(`TMDB: ${err.message}`);
+    }
   };
 
   if (status === 'loading') return <Spinner />;
@@ -144,6 +188,7 @@ export default function Movie() {
             </div>
 
             {playError && <p className="inline-error">{playError}</p>}
+            {syncError && <p className="inline-error">{syncError}</p>}
           </div>
         </div>
       </section>
@@ -171,7 +216,7 @@ export default function Movie() {
       {stream && (
         <Suspense fallback={<Spinner />}>
           <Player
-            url={stream.url}
+            url={stream.proxyUrl || stream.url}
             title={movie.title}
             subtitle={`${t('movie-type')}${movie.released ? ` · ${movie.released}` : ''}`}
             resumeKey={resumeKey}

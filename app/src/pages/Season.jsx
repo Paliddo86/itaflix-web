@@ -190,7 +190,7 @@ export default function Season() {
       {playing && (
         <Suspense fallback={<Spinner />}>
           <Player
-            url={playing.stream.url}
+            url={playing.stream.proxyUrl || playing.stream.url}
             title={`${tvshow.title} · ${t('tvshow-season', { number: seasonNumber })}`}
             subtitle={`${playing.episode.number}. ${playing.episode.title || ''}`}
             resumeKey={contentKey({
