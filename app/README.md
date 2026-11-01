@@ -97,7 +97,7 @@ sulla CDN**.
 
 ## Deploy su Vercel (free)
 
-1. **New Project** → import del repo `itaflix-web` → branch `itaflix-app`.
+1. **New Project** → import del repo `itaflix-web` → branch `main`.
 2. **Root Directory**: `app`
 3. Framework preset: **Vite** · Build: `npm run build` · Output: `dist`
 4. Node.js: **22.x**

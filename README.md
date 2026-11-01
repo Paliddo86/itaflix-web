@@ -26,10 +26,9 @@ npm run dev:api   # terminale 1 → API su :3001
 npm run dev       # terminale 2 → UI su :5173
 ```
 
-**Deploy Vercel**: importa <https://github.com/Paliddo86/itaflix-web> (Root Directory `app`, branch `itaflix-app`) — la UI React + le funzioni `/api` vivono lì.
+**Deploy Vercel**: importa <https://github.com/Paliddo86/itaflix-web> (Root Directory `app`, branch `main`) — la UI React + le funzioni `/api` vivono lì.
 
-**Deploy GitHub Pages** (solo sito statico in `site/`, senza backend):
-`.github/workflows/pages.yml` pubblica `site/` su ogni push verso `main` o `itaflix-app`.
+Il deploy GitHub Pages è stato rimosso: l'app richiede le funzioni serverless in `app/api/`, quindi Vercel è l'unico target.
 
 ---
 
