@@ -5,16 +5,32 @@
 // risponde 403 "Sorry, you have been blocked" quando il Referer è di un
 // dominio terzo o quando la richiesta arriva da un iframe.
 // `fetch` di Node non aggiunge questi header: è esattamente ciò che ci serve.
+//
+// Si replicano invece gli header dell'app tvOS (`itaflix-tvos/src/extractors/
+// vixsrc.js`): `Origin` self-referenziato e `X-Requested-With` fanno
+// classificare la richiesta come XHR legittimo del sito stesso.
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.2 Safari/605.1.15';
 
 const DEFAULT_TIMEOUT = 15000;
 
+/**
+ * Origine "self" usata per gli header: il WAF di vixsrc.to accetta richieste
+ * che si dichiarano provenire dal sito stesso. Configurabile via env.
+ */
+function selfOrigin() {
+  const base = (process.env.VIX_BASE_URL || 'https://vixsrc.to').trim().replace(/\/+$/, '');
+  return base || 'https://vixsrc.to';
+}
+
 function buildHeaders(extra = {}) {
   return {
     'User-Agent': USER_AGENT,
     'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8',
+    // Header replicati da itaflix-tvos (app tvOS che parla con lo stesso WAF).
+    Origin: selfOrigin(),
+    'X-Requested-With': 'XMLHttpRequest',
     ...extra,
   };
 }
