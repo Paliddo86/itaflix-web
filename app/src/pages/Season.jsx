@@ -5,7 +5,7 @@ import ErrorBox from '../components/ErrorBox.jsx';
 import Spinner from '../components/Spinner.jsx';
 
 const Player = lazy(() => import('../components/Player.jsx'));
-import { getStream } from '../lib/api.js';
+import { tvEmbedUrl } from '../lib/embed.js';
 import { t } from '../lib/i18n.js';
 import { params as settingsParams, get as getSetting } from '../lib/settings.js';
 import { contentKey, getResume } from '../lib/storage.js';
@@ -52,25 +52,24 @@ export default function Season() {
     load();
   }, [load]);
 
-  const playEpisode = async (episode) => {
+  const playEpisode = (episode) => {
     if (!tvshow || !episode) return;
 
-    setPlayBusy(episode.number);
     setPlayError('');
 
-    try {
-      const data = await getStream({
-        type: 'tv',
-        id: tvshow.tmdb_id,
-        season: seasonNumber,
-        episode: episode.number,
-      });
-      setPlaying({ stream: data, episode });
-    } catch (err) {
-      setPlayError(err.message);
-    } finally {
-      setPlayBusy(null);
-    }
+    const resumeKey = contentKey({
+      type: 'tv',
+      id: tvshow.tmdb_id,
+      season: seasonNumber,
+      episode: episode.number,
+    });
+
+    setPlaying({
+      embedUrl: tvEmbedUrl(tvshow.tmdb_id, seasonNumber, episode.number, {
+        startAt: getResume(resumeKey),
+      }),
+      episode,
+    });
   };
 
   if (status === 'loading') return <Spinner />;
@@ -190,7 +189,7 @@ export default function Season() {
       {playing && (
         <Suspense fallback={<Spinner />}>
           <Player
-            url={playing.stream.proxyUrl || playing.stream.url}
+            embedUrl={playing.embedUrl}
             title={`${tvshow.title} · ${t('tvshow-season', { number: seasonNumber })}`}
             subtitle={`${playing.episode.number}. ${playing.episode.title || ''}`}
             resumeKey={contentKey({
@@ -200,8 +199,9 @@ export default function Season() {
               episode: playing.episode.number,
             })}
             onClose={() => setPlaying(null)}
-            onNext={nextEpisode ? () => playEpisode(nextEpisode) : undefined}
-            onEnded={autoplay && nextEpisode ? () => playEpisode(nextEpisode) : undefined}
+            onNext={
+              autoplay && nextEpisode ? () => playEpisode(nextEpisode) : undefined
+            }
           />
         </Suspense>
       )}

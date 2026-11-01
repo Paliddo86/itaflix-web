@@ -1,14 +1,8 @@
 {
-  "regions": ["fra1"],
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 20
-    }
-  }
+  ]
 }

@@ -2,24 +2,11 @@ import { useState } from 'react';
 
 import { t } from '../lib/i18n.js';
 import { isStandalone, requestInstall } from '../lib/pwa.js';
-import {
-  getAll,
-  getPreferredQuality,
-  params,
-  quality,
-  set as setSetting,
-} from '../lib/settings.js';
-
-const QUALITY_OPTIONS = [
-  { value: quality.SD, label: 'settings-quality-sd' },
-  { value: quality.HD, label: 'settings-quality-hd' },
-  { value: quality.FULLHD, label: 'settings-quality-fullhd' },
-  { value: quality.UHD, label: 'settings-quality-uhd' },
-];
+import { getAll, params, set as setSetting } from '../lib/settings.js';
 
 /**
- * Impostazioni — equivalente di itaflix-tvos/src/routes/settings.js
- * (qualità video e riproduzione automatica).
+ * Impostazioni — riproduzione automatica e installazione PWA.
+ * La qualità video non è configurabile: la gestisce il player di VixSrc.
  */
 export default function Settings() {
   const [values, setValues] = useState(() => getAll());
@@ -38,24 +25,6 @@ export default function Settings() {
         <h1>{t('settings-title')}</h1>
         {saved && <span className="settings-saved">{t('settings-saved')}</span>}
       </header>
-
-      <section className="settings-group">
-        <h2>{t('settings-video-quality')}</h2>
-        <div className="settings-options">
-          {QUALITY_OPTIONS.map((option) => (
-            <label key={option.value} className="settings-option">
-              <input
-                type="radio"
-                name="video-quality"
-                value={option.value}
-                checked={getPreferredQuality() === option.value}
-                onChange={() => update(params.VIDEO_QUALITY, option.value)}
-              />
-              <span>{t(option.label)}</span>
-            </label>
-          ))}
-        </div>
-      </section>
 
       <section className="settings-group">
         <h2>{t('settings-autoplay')}</h2>
@@ -89,9 +58,8 @@ export default function Settings() {
           progetto non ospita alcun file video.
         </p>
         <p className="settings-about">
-          Scorciatoie del player: <code>spazio</code> play/pausa, <code>←</code>/
-          <code>→</code> 10s, <code>M</code> muto, <code>F</code> schermo intero,
-          <code>Esc</code> chiudi.
+          La riproduzione usa il player di VixSrc: qualità, sottotitoli e lingua
+          si scelgono dai suoi controlli. <code>Esc</code> chiude il player.
         </p>
       </section>
     </div>

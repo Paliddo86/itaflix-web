@@ -34,10 +34,8 @@ stessa logica dati (TMDb) e stesso estrattore **VixSrc**, con UI React in stile 
 | Percorso | Cosa è |
 |---|---|
 | `app/src/lib/` | modelli, client TMDb, i18n, impostazioni, storage, preferiti |
-| `app/src/components/` | NavBar, Row, Tile, Player (hls.js), TmdbLogin, InstallPrompt |
+| `app/src/components/` | NavBar, Row, Tile, Player (iframe VixSrc), TmdbLogin, InstallPrompt |
 | `app/src/pages/` | Home, Search, Catalog, Movie, TvShow, Season, My, Settings |
-| `app/api/` | funzioni serverless: `/api/stream`, `/api/playlist`, `/api/health` |
-| `app/server/` | estrattore VixSrc, proxy playlist, fetch senza Referer |
 | branch `Old` | la vecchia pagina statica ITAFlix (HTML + iframe VixSrc) |
 
 Serve un piccolo backend perché VixSrc risponde `403` alle richieste browser con
@@ -48,10 +46,9 @@ direttamente dal browser.
 
 ## Tecnologie
 
-- **React 18 + Vite**, **hls.js** per la riproduzione HLS
-- **Vercel Functions** (Node 22) per l'estrazione lato server
+- **React 18 + Vite**, sito statico (nessun backend)
 - [TMDb API](https://www.themoviedb.org/documentation/api) per informazioni su film e serie
-- [VixSrc.to](https://vixsrc.to) per lo streaming
+- [VixSrc.to](https://vixsrc.to) per lo streaming (embed in iframe)
 
 Dettagli di sviluppo e architettura in [`app/README.md`](app/README.md).
 

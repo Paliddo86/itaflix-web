@@ -8,28 +8,11 @@ const STORAGE_KEY = 'itaflix-settings';
 const EVENT_NAME = 'itaflix-settings-change';
 
 export const params = {
-  VIDEO_QUALITY: 'video-quality',
   LANGUAGE: 'language',
   AUTOPLAY: 'autoplay',
 };
 
-export const quality = {
-  SD: 'sd',
-  HD: 'hd',
-  FULLHD: 'fullhd',
-  UHD: '4k',
-};
-
-/** Altezze usate per scegliere il livello HLS più vicino alla preferenza. */
-const QUALITY_HEIGHTS = {
-  [quality.SD]: 480,
-  [quality.HD]: 720,
-  [quality.FULLHD]: 1080,
-  [quality.UHD]: 2160,
-};
-
 const defaults = {
-  [params.VIDEO_QUALITY]: quality.FULLHD,
   [params.LANGUAGE]: 'it',
   [params.AUTOPLAY]: true,
 };
@@ -98,12 +81,3 @@ export function subscribe(handler) {
   return () => window.removeEventListener(EVENT_NAME, listener);
 }
 
-/** Altezza (px) del livello video preferito. */
-export function getPreferredHeight() {
-  const preferred = settings[params.VIDEO_QUALITY];
-  return QUALITY_HEIGHTS[preferred] || QUALITY_HEIGHTS[quality.FULLHD];
-}
-
-export function getPreferredQuality() {
-  return settings[params.VIDEO_QUALITY];
-}

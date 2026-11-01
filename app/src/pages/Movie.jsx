@@ -6,9 +6,9 @@ import Row from '../components/Row.jsx';
 import Spinner from '../components/Spinner.jsx';
 import Tile from '../components/Tile.jsx';
 
-// hls.js pesa ~700kB: lo carichiamo solo quando serve davvero.
+// Il player (iframe VixSrc) è caricato solo quando serve davvero.
 const Player = lazy(() => import('../components/Player.jsx'));
-import { getStream } from '../lib/api.js';
+import { movieEmbedUrl } from '../lib/embed.js';
 import { t } from '../lib/i18n.js';
 import { contentKey, getResume, isFavorite, toggleFavorite } from '../lib/storage.js';
 import TMDB from '../lib/tmdb.js';
@@ -78,20 +78,10 @@ export default function Movie() {
   const resumeKey = movie ? contentKey({ type: 'movie', id: movie.tmdb_id }) : null;
   const resumeAt = resumeKey ? getResume(resumeKey) : 0;
 
-  const handlePlay = async () => {
-    if (!movie || playBusy) return;
-
-    setPlayBusy(true);
+  const handlePlay = () => {
+    if (!movie) return;
     setPlayError('');
-
-    try {
-      const data = await getStream({ type: 'movie', id: movie.tmdb_id });
-      setStream(data);
-    } catch (err) {
-      setPlayError(err.message);
-    } finally {
-      setPlayBusy(false);
-    }
+    setStream(movieEmbedUrl(movie.tmdb_id, { startAt: resumeAt }));
   };
 
   const handleFavorite = async () => {
@@ -216,7 +206,7 @@ export default function Movie() {
       {stream && (
         <Suspense fallback={<Spinner />}>
           <Player
-            url={stream.proxyUrl || stream.url}
+            embedUrl={stream}
             title={movie.title}
             subtitle={`${t('movie-type')}${movie.released ? ` · ${movie.released}` : ''}`}
             resumeKey={resumeKey}

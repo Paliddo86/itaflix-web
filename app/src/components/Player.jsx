@@ -1,261 +1,140 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import Hls from 'hls.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { t } from '../lib/i18n.js';
-import { getPreferredHeight } from '../lib/settings.js';
-import { clearResume, getResume, setResume } from '../lib/storage.js';
+import { clearResume, setResume } from '../lib/storage.js';
 
 /**
- * Player HLS — sostituisce `Player`/`Playlist` di TVMLKit.
- * - hls.js su Chrome/Firefox/Edge, HLS nativo su Safari/iOS
- * - scelta del livello in base alla qualità preferita (impostazioni)
- * - ripresa della posizione e salvataggio ogni ~5s
- * - scorciatoie tastiera: spazio, ←/→, M, F, Esc
+ * Player basato sull'embed ufficiale di VixSrc.
  *
- * I controlli nativi del `<video>` mostrano già tempo, durata, barra e
- * impostazioni: qui restano solo le azioni che il player nativo non offre
- * (qualità HLS, prossimo episodio, chiusura).
+ * Perché un iframe e non hls.js: VixSrc serve l'embed solo a richieste che
+ * arrivano da un browser reale e blocca con 403 le chiamate server-side da IP
+ * datacenter (Vercel/AWS). Caricando l'embed nel browser dell'utente non serve
+ * alcun backend: playlist, chiave AES e segmenti sono richiesti direttamente
+ * dal player alla CDN.
+ *
+ * Ripresa della posizione: `startAt=<secondi>` è supportato dall'embed (il
+ * player esegue `seek(startAt)` all'evento `ready`).
+ *
+ * Comunicazione: il player invia al documento padre
+ *   { type: 'PLAYER_EVENT', data: { event, currentTime?, duration?, video_id? } }
+ * con `event` in play | pause | seeked | complete. Serve a salvare la posizione
+ * e a passare all'episodio successivo.
+ *
+ * QUALITÀ: l'embed sceglie da sé la resa e non espone controlli, quindi la
+ * preferenza di qualità è stata rimossa dalle impostazioni.
  */
-export default function Player({ url, title, subtitle, resumeKey, onClose, onNext, onEnded }) {
-  const videoRef = useRef(null);
-  const hlsRef = useRef(null);
+export default function Player({ embedUrl, title, subtitle, resumeKey, onClose, onNext }) {
+  const iframeRef = useRef(null);
   const lastSavedRef = useRef(0);
   const onNextRef = useRef(onNext);
-  const onEndedRef = useRef(onEnded);
 
-  const [status, setStatus] = useState('loading');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [levels, setLevels] = useState([]);
-  const [level, setLevel] = useState(-1);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     onNextRef.current = onNext;
-    onEndedRef.current = onEnded;
-  }, [onNext, onEnded]);
+  }, [onNext]);
 
-  const saveProgress = useCallback(
-    (force = false) => {
-      const video = videoRef.current;
-      if (!video || !resumeKey) return;
-
-      const current = video.currentTime || 0;
-      if (!force && Math.abs(current - lastSavedRef.current) < 5) return;
-
-      lastSavedRef.current = current;
-      if (video.duration && current > 5 && current < video.duration - 15) {
-        setResume(resumeKey, current);
-      }
-    },
-    [resumeKey],
-  );
-
+  // Il player parla al parent con postMessage: posizione e fine episodio.
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !url) return undefined;
+    if (!embedUrl) return undefined;
 
-    setStatus('loading');
-    setErrorMessage('');
-    setLevels([]);
-    setLevel(-1);
+    const saveProgress = (seconds, duration) => {
+      if (!resumeKey || !Number.isFinite(seconds)) return;
+      if (Math.abs(seconds - lastSavedRef.current) < 5) return;
 
-    let hls = null;
+      lastSavedRef.current = seconds;
 
-    const handleLoadedMetadata = () => {
-      const saved = getResume(resumeKey);
-      if (saved > 5 && video.duration && saved < video.duration - 10) {
-        video.currentTime = saved;
+      // Vicino alla fine si azzera, così riaprire riparte dall'inizio.
+      if (duration && seconds > duration - 20) {
+        clearResume(resumeKey);
+        return;
       }
-      setStatus('ready');
-      video.play().catch(() => {});
+      if (seconds > 5) setResume(resumeKey, seconds);
     };
 
-    const handleError = () => {
-      setStatus('error');
-      setErrorMessage(t('player-error'));
-    };
+    const onMessage = (event) => {
+      if (!event.origin.includes('vixsrc.to')) return;
 
-    const handleTimeUpdate = () => {
-      // Il tempo/durata sono mostrati dai controlli nativi del <video>:
-      // qui serve solo a salvare la posizione di ripresa.
-      saveProgress();
-    };
+      const payload = event.data;
+      if (!payload || payload.type !== 'PLAYER_EVENT') return;
 
-    const handlePause = () => saveProgress(true);
+      const data = payload.data || {};
+      const seconds = Number(data.currentTime);
+      const duration = Number(data.duration);
 
-    const handleEnded = () => {
-      if (resumeKey) clearResume(resumeKey);
-      saveProgress(true);
-      if (onEndedRef.current) onEndedRef.current();
-      else if (onNextRef.current) onNextRef.current();
-    };
-
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
-    video.addEventListener('error', handleError);
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('pause', handlePause);
-    video.addEventListener('ended', handleEnded);
-
-    // Ordine importante: Chrome riporta "maybe" anche per
-    // `application/vnd.apple.mpegurl` pur non supportando HLS nativamente,
-    // quindi hls.js (MSE) va preferito; il percorso nativo resta per Safari/iOS.
-    if (Hls.isSupported()) {
-      hls = new Hls({ maxBufferLength: 40, backBufferLength: 30, enableWorker: true });
-      hlsRef.current = hls;
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        const list = hls.levels.map((item, index) => ({
-          index,
-          height: item.height,
-          label: item.height ? `${item.height}p` : `Livello ${index + 1}`,
-        }));
-        setLevels(list);
-
-        const preferred = getPreferredHeight();
-        const candidates = hls.levels
-          .map((item, index) => ({ index, height: item.height || 0 }))
-          .filter((item) => item.height > 0 && item.height <= preferred)
-          .sort((a, b) => b.height - a.height);
-
-        if (candidates.length) {
-          hls.currentLevel = candidates[0].index;
-          setLevel(candidates[0].index);
-        }
-      });
-
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (!data.fatal) return;
-
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          hls.startLoad();
-          return;
-        }
-        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-          hls.recoverMediaError();
-          return;
-        }
-
-        setStatus('error');
-        setErrorMessage(`${t('player-error')} (${data.details})`);
-      });
-
-      hls.loadSource(url);
-      hls.attachMedia(video);
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari / iOS: HLS nativo
-      video.src = url;
-    } else {
-      setStatus('error');
-      setErrorMessage('HLS non supportato da questo browser');
-    }
-
-    return () => {
-      saveProgress(true);
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      video.removeEventListener('error', handleError);
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('pause', handlePause);
-      video.removeEventListener('ended', handleEnded);
-
-      if (hls) {
-        hls.destroy();
-        hlsRef.current = null;
+      if (data.event === 'pause' || data.event === 'seeked' || data.event === 'play') {
+        saveProgress(seconds, duration);
       }
 
-      video.removeAttribute('src');
-      video.load();
+      if (data.event === 'complete') {
+        if (resumeKey) clearResume(resumeKey);
+        const next = onNextRef.current;
+        if (next) next();
+      }
     };
-  }, [url, resumeKey, saveProgress]);
 
-  const changeLevel = (value) => {
-    const index = Number(value);
-    setLevel(index);
-    if (hlsRef.current) hlsRef.current.currentLevel = index;
-  };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [embedUrl, resumeKey]);
 
-  const close = useCallback(() => {
-    saveProgress(true);
-    if (onClose) onClose();
-  }, [onClose, saveProgress]);
-
+  // Esc chiude il player.
   useEffect(() => {
-    const onKeyDown = (event) => {
-      const video = videoRef.current;
-      if (!video) return;
-
-      if (event.code === 'Space') {
-        event.preventDefault();
-        if (video.paused) video.play().catch(() => {});
-        else video.pause();
-      } else if (event.key === 'ArrowRight') {
-        video.currentTime = Math.min(video.currentTime + 10, video.duration || Infinity);
-      } else if (event.key === 'ArrowLeft') {
-        video.currentTime = Math.max(video.currentTime - 10, 0);
-      } else if (event.key.toLowerCase() === 'm') {
-        video.muted = !video.muted;
-      } else if (event.key.toLowerCase() === 'f') {
-        if (document.fullscreenElement) document.exitFullscreen?.();
-        else video.requestFullscreen?.();
-      } else if (event.key === 'Escape') {
-        close();
-      }
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose();
     };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [close]);
+  const src = useMemo(() => embedUrl, [embedUrl]);
+
+  if (!src) return null;
 
   return (
-    <div className="player-overlay" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="player-overlay" role="dialog" aria-modal="true">
       <div className="player-shell">
-        <div className="player-topbar">
+        <header className="player-head">
           <div className="player-titles">
             <h2>{title}</h2>
             {subtitle && <p>{subtitle}</p>}
           </div>
 
           <div className="player-actions">
-            {levels.length > 0 && (
-              <label className="player-quality">
-                <span>{t('player-quality')}</span>
-                <select value={level} onChange={(event) => changeLevel(event.target.value)}>
-                  <option value={-1}>{t('player-auto')}</option>
-                  {levels.map((item) => (
-                    <option key={item.index} value={item.index}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-
             {onNext && (
-              <button type="button" className="btn btn-ghost" onClick={() => onNext()}>
-                ⏭ {t('player-next-episode')}
+              <button type="button" className="btn btn-ghost btn-small" onClick={onNext}>
+                {t('player-next')}
               </button>
             )}
-
-            <button type="button" className="btn btn-ghost" onClick={close}>
-              ✕ {t('player-close')}
+            <button
+              type="button"
+              className="btn btn-ghost btn-small"
+              onClick={onClose}
+              aria-label={t('player-close')}
+            >
+              {t('player-close')}
             </button>
           </div>
-        </div>
+        </header>
 
-        <div className="player-video-wrapper">
-          <video ref={videoRef} controls playsInline preload="metadata" />
-
-          {status === 'loading' && (
-            <div className="player-loading">
+        <div className="player-frame">
+          {!loaded && (
+            <div className="player-loading" aria-live="polite">
               <span className="spinner" />
               <p>{t('player-loading')}</p>
             </div>
           )}
 
-          {status === 'error' && (
-            <div className="player-error">
-              <h3>{t('player-error')}</h3>
-              <p>{errorMessage}</p>
-            </div>
-          )}
+          <iframe
+            ref={iframeRef}
+            className="player-iframe"
+            src={src}
+            title={title || 'Player'}
+            // Il player rifiuta esplicitamente no-referrer: serve `origin`.
+            referrerPolicy="origin"
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowFullScreen
+            onLoad={() => setLoaded(true)}
+          />
         </div>
       </div>
     </div>
