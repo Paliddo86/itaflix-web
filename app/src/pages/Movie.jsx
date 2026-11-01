@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import ErrorBox from '../components/ErrorBox.jsx';
@@ -6,9 +6,7 @@ import Row from '../components/Row.jsx';
 import Spinner from '../components/Spinner.jsx';
 import Tile from '../components/Tile.jsx';
 
-// Il player (iframe VixSrc) è caricato solo quando serve davvero.
-const Player = lazy(() => import('../components/Player.jsx'));
-import { movieEmbedUrl } from '../lib/embed.js';
+import { moviePlayerUrl, openPlayer } from '../lib/embed.js';
 import { t } from '../lib/i18n.js';
 import { contentKey, getResume, isFavorite, toggleFavorite } from '../lib/storage.js';
 import TMDB from '../lib/tmdb.js';
@@ -26,8 +24,6 @@ export default function Movie() {
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
 
-  const [stream, setStream] = useState(null);
-  const [playBusy, setPlayBusy] = useState(false);
   const [playError, setPlayError] = useState('');
   const [favorite, setFavorite] = useState(false);
   const [syncError, setSyncError] = useState('');
@@ -78,10 +74,12 @@ export default function Movie() {
   const resumeKey = movie ? contentKey({ type: 'movie', id: movie.tmdb_id }) : null;
   const resumeAt = resumeKey ? getResume(resumeKey) : 0;
 
+  // Apre il player VixSrc in una pagina dedicata, senza header Referer:
+  // è ciò che evita il 403 di Cloudflare sui domini *.vercel.app.
   const handlePlay = () => {
     if (!movie) return;
     setPlayError('');
-    setStream(movieEmbedUrl(movie.tmdb_id, { startAt: resumeAt }));
+    openPlayer(moviePlayerUrl(movie.tmdb_id, { startAt: resumeAt }));
   };
 
   const handleFavorite = async () => {
@@ -159,13 +157,10 @@ export default function Movie() {
                 type="button"
                 className="btn btn-primary"
                 onClick={handlePlay}
-                disabled={playBusy}
               >
-                {playBusy
-                  ? t('loading')
-                  : resumeAt > 5
-                    ? `▶ ${t('movie-resume', { time: formatTime(resumeAt) })}`
-                    : `▶ ${t('movie-play')}`}
+                {resumeAt > 5
+                  ? `▶ ${t('movie-resume', { time: formatTime(resumeAt) })}`
+                  : `▶ ${t('movie-play')}`}
               </button>
 
               <button
@@ -203,17 +198,6 @@ export default function Movie() {
         </div>
       )}
 
-      {stream && (
-        <Suspense fallback={<Spinner />}>
-          <Player
-            embedUrl={stream}
-            title={movie.title}
-            subtitle={`${t('movie-type')}${movie.released ? ` · ${movie.released}` : ''}`}
-            resumeKey={resumeKey}
-            onClose={() => setStream(null)}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

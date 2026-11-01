@@ -28,27 +28,27 @@ preferiti sincronizzati con TMDb e player HLS con ripresa della posizione.
 ## Come è fatto
 
 La web app vive interamente in `app/` ed è un port dell'app tvOS `itaflix-tvos`:
-stessa logica dati (TMDb) e stesso estrattore **VixSrc**, con UI React in stile TVML
+stessa logica dati (TMDb) e stesso servizio **VixSrc**, con UI React in stile TVML
 (logo originale, voci di menu che si accendono di rosso quando sono a fuoco).
 
 | Percorso | Cosa è |
 |---|---|
 | `app/src/lib/` | modelli, client TMDb, i18n, impostazioni, storage, preferiti |
-| `app/src/components/` | NavBar, Row, Tile, Player (iframe VixSrc), TmdbLogin, InstallPrompt |
+| `app/src/components/` | NavBar, Row, Tile, TmdbLogin, InstallPrompt |
 | `app/src/pages/` | Home, Search, Catalog, Movie, TvShow, Season, My, Settings |
 | branch `Old` | la vecchia pagina statica ITAFlix (HTML + iframe VixSrc) |
 
-Serve un piccolo backend perché VixSrc risponde `403` alle richieste browser con
-`Referer` di terze parti e a quelle dentro un iframe, mentre le chiamate
-server-side passano: l'estrazione gira lato server e restituisce solo l'URL
-m3u8 finale. Manifest HLS, chiave AES e segmenti vengono poi caricati
-direttamente dal browser.
+La riproduzione apre il **player ufficiale di VixSrc** in una pagina dedicata:
+non serve alcun backend. L'apertura avviene **senza header `Referer`**, perché
+VixSrc blocca con `403` i referer dei domini di hosting gratuito (`*.vercel.app`,
+`*.netlify.app`, `*.github.io`, …): un iframe da Vercel non funzionerebbe, una
+navigazione top-level senza Referer sì.
 
 ## Tecnologie
 
 - **React 18 + Vite**, sito statico (nessun backend)
 - [TMDb API](https://www.themoviedb.org/documentation/api) per informazioni su film e serie
-- [VixSrc.to](https://vixsrc.to) per lo streaming (embed in iframe)
+- [VixSrc.to](https://vixsrc.to) per lo streaming (player in pagina dedicata)
 
 Dettagli di sviluppo e architettura in [`app/README.md`](app/README.md).
 

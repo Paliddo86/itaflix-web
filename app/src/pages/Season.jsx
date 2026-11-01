@@ -1,13 +1,11 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import ErrorBox from '../components/ErrorBox.jsx';
 import Spinner from '../components/Spinner.jsx';
 
-const Player = lazy(() => import('../components/Player.jsx'));
-import { tvEmbedUrl } from '../lib/embed.js';
+import { openPlayer, tvPlayerUrl } from '../lib/embed.js';
 import { t } from '../lib/i18n.js';
-import { params as settingsParams, get as getSetting } from '../lib/settings.js';
 import { contentKey, getResume } from '../lib/storage.js';
 import TMDB from '../lib/tmdb.js';
 import { formatTime, isMoreThanDaysAhead } from '../lib/utils.js';
@@ -27,8 +25,6 @@ export default function Season() {
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
 
-  const [playing, setPlaying] = useState(null);
-  const [playBusy, setPlayBusy] = useState(null);
   const [playError, setPlayError] = useState('');
 
   const load = useCallback(async () => {
@@ -64,12 +60,13 @@ export default function Season() {
       episode: episode.number,
     });
 
-    setPlaying({
-      embedUrl: tvEmbedUrl(tvshow.tmdb_id, seasonNumber, episode.number, {
+    // Apre il player VixSrc in una pagina dedicata, senza header Referer:
+    // è ciò che evita il 403 di Cloudflare sui domini *.vercel.app.
+    openPlayer(
+      tvPlayerUrl(tvshow.tmdb_id, seasonNumber, episode.number, {
         startAt: getResume(resumeKey),
       }),
-      episode,
-    });
+    );
   };
 
   if (status === 'loading') return <Spinner />;
@@ -79,10 +76,6 @@ export default function Season() {
   }
 
   const episodes = season.episodes || [];
-  const nextEpisode = playing
-    ? episodes.find((episode) => episode.number === playing.episode.number + 1)
-    : null;
-  const autoplay = Boolean(getSetting(settingsParams.AUTOPLAY));
 
   return (
     <div className="page page-season">
@@ -168,13 +161,10 @@ export default function Season() {
                     type="button"
                     className="btn btn-primary btn-small"
                     onClick={() => playEpisode(episode)}
-                    disabled={playBusy === episode.number}
                   >
-                    {playBusy === episode.number
-                      ? t('loading')
-                      : resumeAt > 5
-                        ? `▶ ${t('movie-resume', { time: formatTime(resumeAt) })}`
-                        : `▶ ${t('episode-play')}`}
+                    {resumeAt > 5
+                      ? `▶ ${t('movie-resume', { time: formatTime(resumeAt) })}`
+                      : `▶ ${t('episode-play')}`}
                   </button>
                   {episode.runtime ? (
                     <span className="episode-runtime">{episode.runtime} min</span>
@@ -186,25 +176,6 @@ export default function Season() {
         })}
       </ul>
 
-      {playing && (
-        <Suspense fallback={<Spinner />}>
-          <Player
-            embedUrl={playing.embedUrl}
-            title={`${tvshow.title} · ${t('tvshow-season', { number: seasonNumber })}`}
-            subtitle={`${playing.episode.number}. ${playing.episode.title || ''}`}
-            resumeKey={contentKey({
-              type: 'tv',
-              id: tvshow.tmdb_id,
-              season: seasonNumber,
-              episode: playing.episode.number,
-            })}
-            onClose={() => setPlaying(null)}
-            onNext={
-              autoplay && nextEpisode ? () => playEpisode(nextEpisode) : undefined
-            }
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

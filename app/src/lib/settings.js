@@ -9,12 +9,10 @@ const EVENT_NAME = 'itaflix-settings-change';
 
 export const params = {
   LANGUAGE: 'language',
-  AUTOPLAY: 'autoplay',
 };
 
 const defaults = {
   [params.LANGUAGE]: 'it',
-  [params.AUTOPLAY]: true,
 };
 
 export const SERVICE_ID_MAP = {

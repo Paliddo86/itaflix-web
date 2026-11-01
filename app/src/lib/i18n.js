@@ -55,15 +55,9 @@ const translations = {
     'no-description': 'Nessuna descrizione disponibile.',
     'tvshow-new': 'NUOVO',
 
-    'player-loading': 'Preparazione dello streaming...',
-    'player-error': 'Impossibile avviare la riproduzione',
-    'player-next': 'Prossimo episodio',
-    'player-next-episode': 'Prossimo episodio',
-    'player-close': 'Chiudi',
 
     'settings-title': 'Impostazioni',
     'settings-language': 'Lingua',
-    'settings-autoplay': 'Riproduci automaticamente il prossimo episodio',
     'settings-about': 'Info',
     'settings-version': 'Versione',
     'settings-saved': 'Impostazioni salvate',

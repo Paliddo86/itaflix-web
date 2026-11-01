@@ -17,9 +17,16 @@
 
 const RELOAD_FLAG = 'itaflix-sw-reload';
 
-/** Un video/embed è aperto? In quel caso rimandiamo il reload. */
+/**
+ * L'utente sta guardando qualcosa?
+ *
+ * Il player VixSrc è una pagina esterna, quindi qui non c'è più un overlay:
+ * consideriamo "in riproduzione" il caso in cui la pagina è nascosta (scheda
+ * in background o app in secondo piano), così un aggiornamento non interrompe
+ * la visione.
+ */
 function isPlaying() {
-  return Boolean(document.querySelector('.player-overlay'));
+  return document.visibilityState === 'hidden';
 }
 
 /**

@@ -15,17 +15,26 @@ L'app è **un sito statico**. Non ci sono funzioni serverless, né backend.
 | Cosa | Dove |
 |---|---|
 | Catalogo, ricerca, dettagli, preferiti | browser → **TMDB API** |
-| Riproduzione | browser → **embed VixSrc** in un iframe |
+| Riproduzione | browser → **player VixSrc** in pagina dedicata, senza Referer |
 
-### Perché l'iframe e non un player custom
+### Perché una pagina dedicata e non un iframe
 
 VixSrc espone il proprio player su `https://vixsrc.to/movie/{id}` e
-`https://vixsrc.to/tv/{id}/{season}/{episode}`. Questo player, caricato dal
-browser dell'utente:
+`https://vixsrc.to/tv/{id}/{season}/{episode}`. Il player:
 
-- richiede `playlist`, chiave AES e segmenti **direttamente alla CDN** (tutti
-  con `Access-Control-Allow-Origin: *`)
+- richiede `playlist`, chiave AES e segmenti **direttamente alla CDN**
 - funziona con l'IP residenziale dell'utente, senza proxy
+
+**Il vincolo decisivo è il Referer.** VixSrc blocca con `403` (pagina Cloudflare
+"Sorry, you have been blocked") i referer dei domini di hosting gratuito:
+`*.vercel.app`, `*.netlify.app`, `*.github.io`, `*.web.app`, `*.workers.dev`.
+Un iframe manda sempre il referer del sito che lo ospita, quindi **da Vercel il
+player non parte**, in nessun modo.
+
+Aprendo il player in una **navigazione top-level senza header `Referer`** il WAF
+lo accetta: verificato `200` e video in riproduzione. Il progetto ottiene questo
+con `<meta name="referrer" content="no-referrer">` in `index.html` e
+`rel="noreferrer noopener"` sul link che apre il player.
 
 Un estrattore server-side (la versione precedente di questo progetto) invece
 **non funziona su Vercel o Netlify**: VixSrc risponde `403` — pagina Cloudflare
@@ -33,26 +42,18 @@ Un estrattore server-side (la versione precedente di questo progetto) invece
 (AWS `AS14618`/`AS16509`). Provato in `us-east-1` e `eu-central-1`: stesso esito.
 Da IP residenziale gli stessi header danno `200`.
 
-### Vincoli dell'embed
+### Comportamento
 
-| Regola | Dettaglio |
+| Aspetto | Dettaglio |
 |---|---|
-| `referrerpolicy` | deve essere **`origin`**. Con `no-referrer` il player mostra "THIS PLAYER CANNOT BE EMBEDDED WITH REFERRERPOLICY=no-referrer" |
-| `allow` | `autoplay; fullscreen; encrypted-media; picture-in-picture` |
-| qualità video | decisa dal player (720p), nessun controllo esposto → rimosso dalle impostazioni |
+| apertura | nuova scheda (`rel="noreferrer noopener"`); **stessa scheda** su iOS in standalone, per restare dentro la PWA |
+| controlli | quelli nativi di VixSrc: play, pausa, seek, volume, qualità, sottotitoli, schermo intero |
+| qualità video | decisa dal player → rimossa dalle impostazioni |
 | ripresa posizione | parametro **`startAt=<secondi>`**: il player esegue `seek(startAt)` all'evento `ready` |
+| prossimo episodio | non gestito dall'app (il player è una pagina esterna): si sceglie dall'elenco episodi |
 
-### Ripresa e prossimo episodio
-
-Il player comunica col documento padre via `postMessage`:
-
-```js
-{ type: 'PLAYER_EVENT', data: { event, currentTime?, duration?, video_id? } }
-// event: play | pause | seeked | complete
-```
-
-`Player.jsx` ascolta questi messaggi per salvare la posizione in `localStorage`
-(`itaflix-resume`) e per passare all'episodio successivo su `complete`.
+La posizione viene salvata in `localStorage` (`itaflix-resume`) e riletta quando
+si riapre il contenuto, che propone "Riprendi da HH:MM".
 
 ---
 
@@ -103,7 +104,7 @@ Nessuna funzione, nessuna regione da configurare: è un sito statico su CDN.
 ### Qualsiasi altro host statico
 
 `npm run build` e pubblica `dist/`. GitHub Pages, Netlify, Cloudflare Pages
-funzionano ugualmente (l'iframe non dipende dall'host).
+funzionano ugualmente (il player non dipende da chi ospita il sito).
 
 ---
 
@@ -114,14 +115,14 @@ app/
 ├── public/                icone PWA, manifest, service worker, logo
 ├── src/
 │   ├── lib/
-│   │   ├── embed.js       URL embed VixSrc (movie / tv) + startAt
+│   │   ├── embed.js       URL player VixSrc + apertura senza Referer
 │   │   ├── models.js      normalizzazione dati TMDB
 │   │   ├── tmdb.js        client TMDB con cache
 │   │   ├── i18n.js        stringhe italiane
 │   │   ├── settings.js    impostazioni (autoplay)
 │   │   ├── storage.js     preferiti e posizione di riproduzione
 │   │   └── user.js        sessione TMDB in localStorage
-│   ├── components/        NavBar, Row, Tile, Player (iframe), TmdbLogin, …
+│   ├── components/        NavBar, Row, Tile, TmdbLogin, InstallPrompt, …
 │   └── pages/             Home, Search, Catalog, Movie, TvShow, Season, My, Settings
 └── vercel.json            rewrite SPA
 ```
@@ -132,14 +133,14 @@ app/
 |---|---|
 | `helpers/models.js` | `src/lib/models.js` |
 | `request/tmdb.js` | `src/lib/tmdb.js` |
-| `extractors/vixsrc.js` | **rimosso** → iframe `vixsrc.to/movie/{id}` |
+| `extractors/vixsrc.js` | **rimosso** → pagina `vixsrc.to/movie/{id}` |
 | `localization/it.js` | `src/lib/i18n.js` |
 | `settings.js` | `src/lib/settings.js` |
 | `user.js` | `src/lib/user.js` |
 | `routes/home.js` | `src/pages/Home.jsx` |
 | `routes/search.js` | `src/pages/Search.jsx` |
 | `routes/moviesGenres.js` · `tvShowsGenres.js` | `src/pages/Catalog.jsx` |
-| `routes/movie.js` | `src/pages/Movie.jsx` + `components/Player.jsx` |
+| `routes/movie.js` | `src/pages/Movie.jsx` (+ `lib/embed.js`) |
 | `routes/tvshow.js` + `season.js` | `src/pages/TvShow.jsx` + `Season.jsx` |
 | `routes/my.js` | `src/pages/My.jsx` |
 | `routes/tmdb-login.js` | `src/components/TmdbLogin.jsx` |
@@ -159,9 +160,7 @@ app/
 - Cataloghi Film/Serie con filtri per **piattaforma** e **genere** + "carica altri"
 - Dettaglio film con collezione e raccomandati
 - Dettaglio serie con stagioni, elenco episodi e "prossimo episodio"
-- Player VixSrc con ripresa della posizione (`startAt`) e avanzamento automatico
-  all'episodio successivo
+- Player VixSrc in pagina dedicata, con ripresa della posizione (`startAt`)
 - **Preferiti**: locali in `localStorage` e, dopo il login TMDB, sincronizzati
   sull'account (con stato letto da `account_states`)
-- Impostazioni: riproduzione automatica del prossimo episodio
 - Layout **responsive** (desktop, tablet, smartphone), installabile come **PWA**
