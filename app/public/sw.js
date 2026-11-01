@@ -5,7 +5,8 @@
  * in cache: lo stream deve sempre essere risolto dal server.
  */
 
-const CACHE = 'itaflix-shell-v2';
+// Bump ad ogni release: invalida la shell in cache dei client gia installati.
+const CACHE = 'itaflix-shell-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png', './icon-192.png'];
 
 self.addEventListener('install', (event) => {

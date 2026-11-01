@@ -111,12 +111,28 @@ a {
 .navbar-logo {
   display: flex;
   align-items: center;
+  gap: 0.45rem;
   white-space: nowrap;
 }
 
 .navbar-logo img {
   height: 30px;
   width: auto;
+}
+
+/* Versione accanto al logo: discreta, non ruba attenzione alle voci. */
+.navbar-version {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.35rem;
+  line-height: 1.2;
+  align-self: center;
+  transform: translateY(1px);
 }
 
 .navbar-links {

@@ -31,6 +31,7 @@ export default function NavBar() {
     <header className={`navbar${scrolled ? ' navbar-scrolled' : ''}`}>
       <NavLink to="/" className="navbar-logo" aria-label={t('app-name')}>
         <img src="/logo.png" alt={t('app-name')} />
+        <span className="navbar-version">v{__APP_VERSION__}</span>
       </NavLink>
 
       <nav className="navbar-links">

@@ -53,9 +53,9 @@ export default function Settings() {
       <section className="settings-group">
         <h2>{t('settings-about')}</h2>
         <p className="settings-about">
-          ITAFlix Web {t('settings-version')} 1.0.0 — porting web dell&apos;app tvOS
-          (React + Vite). I contenuti sono forniti da servizi di terze parti: questo
-          progetto non ospita alcun file video.
+          ITAFlix Web {t('settings-version')} {__APP_VERSION__} — porting web
+          dell&apos;app tvOS (React + Vite). I contenuti sono forniti da servizi di
+          terze parti: questo progetto non ospita alcun file video.
         </p>
         <p className="settings-about">
           La riproduzione usa il player di VixSrc: qualità, sottotitoli e lingua
