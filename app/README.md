@@ -48,6 +48,8 @@ Da IP residenziale gli stessi header danno `200`.
 |---|---|
 | apertura | nuova scheda (`rel="noreferrer noopener"`); **stessa scheda** su iOS in standalone, per restare dentro la PWA |
 | controlli | quelli nativi di VixSrc: play, pausa, seek, volume, qualità, sottotitoli, schermo intero |
+| avvio | `?autoplay=true` → il player fa `autostart` da sé. Chrome può bloccare l'autoplay con audio finché non c'è un'interazione nella pagina del player: in tal caso si preme play |
+| schermo intero | non forzabile: la Fullscreen API vale solo per il documento che la chiama, non per una scheda cross-origin. Si usa il pulsante del player |
 | qualità video | decisa dal player → rimossa dalle impostazioni |
 | ripresa posizione | parametro **`startAt=<secondi>`**: il player esegue `seek(startAt)` all'evento `ready` |
 | prossimo episodio | non gestito dall'app (il player è una pagina esterna): si sceglie dall'elenco episodi |

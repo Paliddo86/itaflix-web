@@ -1,7 +1,7 @@
 {
   "name": "itaflix-web",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "description": "ITAFlix web app - porting web dell'app tvOS (React + Vite, player VixSrc embed)",
   "engines": {

@@ -25,7 +25,14 @@ const BASE = 'https://vixsrc.to';
 // Sotto i 5 secondi la ripresa è inutile e fastidiosa.
 const MIN_RESUME_SECONDS = 5;
 
-function withStart(url, startAt) {
+/**
+ * Aggiunge i parametri che il player legge all'avvio:
+ *  - `autoplay=true` → `autostart: true` nel setup del player
+ *  - `startAt=<secondi>` → `seek(startAt)` all'evento `ready`
+ */
+function withPlaybackParams(url, { startAt = 0, autoplay = true } = {}) {
+  if (autoplay) url.searchParams.set('autoplay', 'true');
+
   const seconds = Number(startAt);
   if (Number.isFinite(seconds) && seconds > MIN_RESUME_SECONDS) {
     url.searchParams.set('startAt', String(Math.floor(seconds)));
@@ -34,13 +41,16 @@ function withStart(url, startAt) {
 }
 
 /** URL della pagina player per un film: `/movie/{id}`. */
-export function moviePlayerUrl(id, { startAt = 0 } = {}) {
-  return withStart(new URL(`${BASE}/movie/${id}`), startAt);
+export function moviePlayerUrl(id, { startAt = 0, autoplay = true } = {}) {
+  return withPlaybackParams(new URL(`${BASE}/movie/${id}`), { startAt, autoplay });
 }
 
 /** URL della pagina player per un episodio: `/tv/{id}/{season}/{episode}`. */
-export function tvPlayerUrl(id, season, episode, { startAt = 0 } = {}) {
-  return withStart(new URL(`${BASE}/tv/${id}/${season}/${episode}`), startAt);
+export function tvPlayerUrl(id, season, episode, { startAt = 0, autoplay = true } = {}) {
+  return withPlaybackParams(new URL(`${BASE}/tv/${id}/${season}/${episode}`), {
+    startAt,
+    autoplay,
+  });
 }
 
 /**
@@ -52,15 +62,20 @@ export function tvPlayerUrl(id, season, episode, { startAt = 0 } = {}) {
  *  - **altrove**: nuova scheda, così l'app resta aperta e si torna indietro
  *    chiudendo la scheda del player.
  *
- * In entrambi i casi serve un gesto utente: i browser bloccano l'apertura
- * automatica di nuove schede.
+ * L'avvio automatico della riproduzione è nel player (`?autoplay=true`).
+ * Lo schermo intero **non** viene forzato: la Fullscreen API vale solo per il
+ * documento che la chiama e non è applicabile a una scheda cross-origin, quindi
+ * si usa il pulsante a schermo intero dei controlli del player.
+ *
+ * Serve un gesto utente: i browser bloccano l'apertura automatica di nuove
+ * schede.
+ *
+ * @param {string} url
  */
 export function openPlayer(url) {
   if (!url) return;
 
-  const sameTab = isIos() && isStandalone();
-
-  if (sameTab) {
+  if (isIos() && isStandalone()) {
     // Il meta referrer `no-referrer` della pagina evita l'invio dell'header.
     window.location.assign(url);
     return;
