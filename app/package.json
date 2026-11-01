@@ -5,7 +5,7 @@
   "type": "module",
   "description": "ITAFlix web app - porting web dell'app tvOS (React + Vite + Vercel Functions)",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "vite",

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { t } from '../lib/i18n.js';
+import { isStandalone, requestInstall } from '../lib/pwa.js';
 import {
   getAll,
   getPreferredQuality,
@@ -66,6 +67,18 @@ export default function Settings() {
           />
           <span>{values[params.AUTOPLAY] ? 'Attivo' : 'Disattivo'}</span>
         </label>
+      </section>
+
+      <section className="settings-group">
+        <h2>{t('settings-install')}</h2>
+        <p className="settings-about">
+          {isStandalone() ? t('settings-installed') : t('settings-install-hint')}
+        </p>
+        {!isStandalone() && (
+          <button type="button" className="btn btn-primary btn-small" onClick={requestInstall}>
+            {t('settings-install')}
+          </button>
+        )}
       </section>
 
       <section className="settings-group">

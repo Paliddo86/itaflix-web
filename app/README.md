@@ -37,7 +37,7 @@ Due dettagli indispensabili già implementati:
 
 ## Avvio in locale
 
-Prerequisiti: **Node.js 20+** e npm.
+Prerequisiti: **Node.js 22+** e npm.
 
 ```bash
 cd app
@@ -97,10 +97,10 @@ sulla CDN**.
 
 ## Deploy su Vercel (free)
 
-1. **New Project** → import del repo `VixFlix` → branch `itaflix-app`.
+1. **New Project** → import del repo `itaflix-web` → branch `itaflix-app`.
 2. **Root Directory**: `app`
 3. Framework preset: **Vite** · Build: `npm run build` · Output: `dist`
-4. Node.js: **20.x**
+4. Node.js: **22.x**
 5. Environment Variables: `VITE_TMDB_API`, `TMDB_API`, `VIX_BASE_URL`
 6. Deploy.
 

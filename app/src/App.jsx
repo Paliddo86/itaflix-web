@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 
 import NavBar from './components/NavBar.jsx';
+import InstallPrompt from './components/InstallPrompt.jsx';
 import Catalog from './pages/Catalog.jsx';
 import Home from './pages/Home.jsx';
 import Movie from './pages/Movie.jsx';
@@ -51,6 +52,8 @@ export default function App() {
           <Route path="*" element={<Home />} />
         </Routes>
       </main>
+
+      <InstallPrompt />
     </>
   );
 }

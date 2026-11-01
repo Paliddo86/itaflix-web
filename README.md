@@ -26,15 +26,17 @@ npm run dev:api   # terminale 1 → API su :3001
 npm run dev       # terminale 2 → UI su :5173
 ```
 
-Deploy consigliato: **Vercel** con *Root Directory* = `app` (istruzioni complete
-in [`app/README.md`](app/README.md)).
+**Deploy Vercel**: importa <https://github.com/Paliddo86/itaflix-web> (Root Directory `app`, branch `itaflix-app`) — la UI React + le funzioni `/api` vivono lì.
+
+**Deploy GitHub Pages** (solo sito statico in `site/`, senza backend):
+`.github/workflows/pages.yml` pubblica `site/` su ogni push verso `main` o `itaflix-app`.
 
 ---
 
 ## 🛠️ Tecnologie utilizzate
 
 - **React 18 + Vite** (web app), **hls.js** per la riproduzione HLS
-- **Vercel Functions** (Node 20) per l'estrazione lato server
+- **Vercel Functions** (Node 22) per l'estrazione lato server
 - [TMDb API](https://www.themoviedb.org/documentation/api) per informazioni su film/serie
 - [VixSrc.to](https://vixsrc.to) per lo streaming
 - La vecchia pagina statica (`index.html`) resta disponibile sul branch `Old`

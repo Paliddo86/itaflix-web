@@ -5,7 +5,7 @@
  * Differenze rispetto all'originale, necessarie lato server:
  *  - niente `eval`: gli object literal presenti nell'HTML vengono convertiti in
  *    JSON con una trasformazione deterministica e poi letti con JSON.parse;
- *  - `fetch` (Node 20) con timeout e senza Referer/Origin, così il WAF di
+ *  - `fetch` (Node 22) con timeout e senza Referer/Origin, così il WAF di
  *    vixsrc non blocca le richieste;
  *  - espone anche la lista dei server alternativi (`window.streams`).
  */

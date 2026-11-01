@@ -3,7 +3,10 @@ import react from '@vitejs/plugin-react';
 
 // In sviluppo la UI gira su :5173 e le API (serverless) su :3001 (vedi `npm run dev:api`).
 // In produzione su Vercel lo stesso path /api è servito dalla funzione omonima.
+// `VITE_BASE_PATH` permette di servire la build da una sottocartella
+// (es. GitHub Pages: /itaflix-web/).
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [react()],
   server: {
     port: 5173,

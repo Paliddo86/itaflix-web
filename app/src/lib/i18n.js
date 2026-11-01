@@ -97,6 +97,26 @@ const translations = {
     'my-logout': 'Esci',
     'my-connected': 'Connesso come {username}',
     'my-open-login': 'Accedi con TMDB',
+
+    'install-title': 'Installa ITAFlix',
+    'install-subtitle': "Aggiungi l'app alla schermata Home o al desktop",
+    'install-ios-subtitle': 'Su iPhone/iPad: 2 tap per aggiungerla alla Home',
+    'install-button': 'Installa',
+    'install-dismiss': 'Non ora',
+    'install-help-title': 'Aggiungi alla schermata Home',
+    'install-help-intro':
+      'Apple non consente l’installazione automatica: bastano due tap in Safari e il segnalibro viene creato sulla Home.',
+    'install-step-share': "Tocca l'icona Condividi nella barra di Safari",
+    'install-step-add': 'Scorri e scegli «Aggiungi a Home»',
+    'install-step-confirm':
+      "Conferma con «Aggiungi»: l'icona ITAFlix comparirà nella Home e si aprirà a schermo intero.",
+    'install-help-other':
+      'Dal menu del browser scegli «Installa app» (o «Aggiungi alla schermata Home»). Il browser creerà il collegamento in automatico.',
+    'install-close': 'Chiudi',
+    'settings-install': 'Installa app',
+    'settings-install-hint':
+      "Aggiungi ITAFlix alla schermata Home per aprirla a schermo intero, senza barra del browser.",
+    'settings-installed': 'ITAFlix è installata su questo dispositivo.',
   },
 };
 
