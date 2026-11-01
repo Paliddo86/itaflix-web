@@ -38,6 +38,7 @@ const routes = {
   '/api/stream': (await import('../api/stream.js')).default,
   '/api/health': (await import('../api/health.js')).default,
   '/api/playlist': (await import('../api/playlist.js')).default,
+  '/api/debug-egress': (await import('../api/debug-egress.js')).default,
 };
 
 function decorateResponse(res) {
