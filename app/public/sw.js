@@ -5,7 +5,7 @@
  * in cache: lo stream deve sempre essere risolto dal server.
  */
 
-const CACHE = 'itaflix-shell-v1';
+const CACHE = 'itaflix-shell-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png', './icon-192.png'];
 
 self.addEventListener('install', (event) => {

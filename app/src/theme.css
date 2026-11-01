@@ -12,6 +12,10 @@
   --accent-hover: rgb(215, 20, 20);
   --radius: 10px;
   --navbar-height: 68px;
+  /* safe-area iOS (PWA standalone con status bar translucent): 0 su desktop */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --navbar-offset: calc(var(--navbar-height) + var(--safe-top));
   /* margine orizzontale unico per navbar, liste, griglie e pagine */
   --page-gutter: 4vw;
 }
@@ -81,11 +85,14 @@ a {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 90;
-  height: var(--navbar-height);
+  /* l'altezza include l'inset: lo sfondo copre anche la status bar */
+  height: var(--navbar-offset);
   display: flex;
   align-items: center;
   gap: 2rem;
-  padding: 0 var(--page-gutter);
+  padding: var(--safe-top) max(var(--page-gutter), env(safe-area-inset-right, 0px)) 0
+    max(var(--page-gutter), env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
   background: linear-gradient(
     180deg,
     rgba(0, 0, 0, 0.92) 0%,
@@ -149,12 +156,13 @@ a {
 }
 
 .app-main {
-  padding-top: var(--navbar-height);
+  padding-top: var(--navbar-offset);
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .page {
-  padding-bottom: 4rem;
+  padding-bottom: calc(4rem + var(--safe-bottom));
 }
 
 /* ------------------------------------------------------------------ */
@@ -714,7 +722,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2vh 2vw;
+  padding: calc(2vh + var(--safe-top)) calc(2vw + env(safe-area-inset-right, 0px))
+    calc(2vh + var(--safe-bottom)) calc(2vw + env(safe-area-inset-left, 0px));
   background: rgba(0, 0, 0, 0.94);
   backdrop-filter: blur(6px);
 }
@@ -1124,7 +1133,11 @@ a {
     align-items: flex-start;
     justify-content: center;
     gap: 0.35rem;
-    padding: 0.55rem var(--page-gutter);
+    /* top = safe-area, non 0.55rem: altrimenti il padding verticale
+       sovrascrive l'inset e il logo finisce sotto il notch */
+    padding: calc(var(--safe-top) + 0.55rem)
+      max(var(--page-gutter), env(safe-area-inset-right, 0px)) 0.55rem
+      max(var(--page-gutter), env(safe-area-inset-left, 0px));
   }
 
   .navbar-logo img {
@@ -1393,7 +1406,8 @@ a {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 1rem;
+  padding: calc(1rem + var(--safe-top)) calc(1rem + env(safe-area-inset-right, 0px))
+    calc(1rem + var(--safe-bottom)) calc(1rem + env(safe-area-inset-left, 0px));
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(4px);
 }

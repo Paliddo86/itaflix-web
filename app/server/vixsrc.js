@@ -12,7 +12,11 @@
 
 import { fetchJson, fetchText } from './http.js';
 
-export const DEFAULT_BASE_URL = process.env.VIX_BASE_URL || 'https://vixsrc.to';
+// Normalizza la base: senza il trim dello slash finale `https://vixsrc.to/`
+// produrrebbe `https://vixsrc.to//api/movie/<id>` (404/403 sul WAF).
+const trimBase = (value) => String(value || '').trim().replace(/\/+$/, '');
+
+export const DEFAULT_BASE_URL = trimBase(process.env.VIX_BASE_URL) || 'https://vixsrc.to';
 
 const JSON_HEADERS = { Accept: 'application/json' };
 
@@ -218,10 +222,11 @@ export function buildFinalUrl({ masterPlaylist, canPlayFHD }) {
 }
 
 export function buildApiUrl({ type, id, season, episode, baseUrl = DEFAULT_BASE_URL }) {
+  const base = trimBase(baseUrl) || DEFAULT_BASE_URL;
   if (type === 'tv') {
-    return `${baseUrl}/api/tv/${id}/${season}/${episode}`;
+    return `${base}/api/tv/${id}/${season}/${episode}`;
   }
-  return `${baseUrl}/api/movie/${id}`;
+  return `${base}/api/movie/${id}`;
 }
 
 /* ------------------------------------------------------------------------- */
